@@ -1,0 +1,24 @@
+{
+  "name": "howling20",
+  "version": "1.0.0",
+  "description": "Howling 20th : MMORPM",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mommocmoc/howling20.git"
+  },
+  "keywords": [],
+  "author": "Jae Hwan So",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mommocmoc/howling20/issues"
+  },
+  "homepage": "https://github.com/mommocmoc/howling20#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "phaser": "^3.18.1"
+  }
+}
