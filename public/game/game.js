@@ -1,3 +1,4 @@
+const maxApi = require('max-api');
 var config = {
   type: Phaser.AUTO,
   parent: 'mmorpm',
