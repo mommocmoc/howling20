@@ -19,6 +19,8 @@
   "homepage": "https://github.com/mommocmoc/howling20#readme",
   "dependencies": {
     "express": "^4.17.1",
-    "phaser": "^3.18.1"
+    "osc.io": "0.0.3",
+    "phaser": "^3.18.1",
+    "socket.io": "^2.2.0"
   }
 }
