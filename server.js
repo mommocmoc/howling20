@@ -4,11 +4,19 @@ var server = require('http').Server(app)
 var io = require('socket.io')(server)
 var osc = require('osc.io')
 var players = {}
+var star = {
+  x: Math.floor(Math.random() * 700) + 50,
+  y: Math.floor(Math.random() * 500) + 50
+};
+var scores = {
+  blue: 0,
+  red: 0
+};
 osc(io)
 var oscServer = io.of('http://localhost/osc/servers/8000');
 var oscClient = io.of('http://localhost/osc/clients/8000');
 setInterval(function() {
-  oscClient.emit('message',['/osc/test',200])
+  oscClient.emit('message', ['/osc/test', 200])
 }, 1000)
 app.use('/assets', express.static('./public'))
 app.use('/scripts', express.static('./node_modules/phaser/dist/'))
@@ -34,6 +42,10 @@ io.on('connection', function(socket) {
   }
   //send the players objec to the new player
   socket.emit('currentPlayers', players);
+  // send the star object to the new player
+  socket.emit('starLocation', star);
+  // send the current scores
+  socket.emit('scoreUpdate', scores);
   //update all other players of the new player
   socket.broadcast.emit('newPlayer', players[socket.id]);
 
@@ -53,7 +65,18 @@ io.on('connection', function(socket) {
     players[socket.id].rotation = movementData.rotation;
     // emit a message to all players about the player that moved
     socket.broadcast.emit('playerMoved', players[socket.id]);
+  });
 
+  socket.on('starCollected', function() {
+    if (players[socket.id].team === 'red') {
+      scores.red += 10;
+    } else {
+      scores.blue += 10;
+    }
+    star.x = Math.floor(Math.random() * 700) + 50;
+    star.y = Math.floor(Math.random() * 500) + 50;
+    io.emit('starLocation', star);
+    io.emit('scoreUpdate', scores);
   });
 })
 

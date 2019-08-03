@@ -1,4 +1,3 @@
-const maxApi = require('max-api');
 var config = {
   type: Phaser.AUTO,
   parent: 'mmorpm',
@@ -55,6 +54,8 @@ function create() {
   });
   //키보드 인풋 받겠다
   this.cursors = this.input.keyboard.createCursorKeys();
+  //터치 인풋
+  this.input.addPointer(1);
   //'playerMoved'이벤트를 서버에서 수신하고 playerInfo에 수신받은 players[socket.id]정보 입력
   this.socket.on('playerMoved', function (playerInfo) {
     //otherPlayers 오브젝트
@@ -65,12 +66,24 @@ function create() {
     }
   });
 });
+//스코어 부분
+this.blueScoreText = this.add.text(16, 16, '', { fontSize: '32px', fill: '#0000FF' });
+this.redScoreText = this.add.text(584, 16, '', { fontSize: '32px', fill: '#FF0000' });
+
+this.socket.on('scoreUpdate', function (scores) {
+  self.blueScoreText.setText('Blue: ' + scores.blue);
+  self.redScoreText.setText('Red: ' + scores.red);
+});
+
 }
 
 function update() {
 
   if (this.ship) {
-
+    if(this.input.pointer1.isDown){
+      this.ship.x = this.input.pointer1.x;
+      this.ship.y = this.input.pointer1.y;
+    }
     if (this.cursors.left.isDown) {
       this.ship.setAngularVelocity(-150);
     } else if (this.cursors.right.isDown) {
