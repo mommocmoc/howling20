@@ -75,6 +75,7 @@ io.on('connection', function(socket) {
     }
     star.x = Math.floor(Math.random() * 700) + 50;
     star.y = Math.floor(Math.random() * 500) + 50;
+    //별 위치 바꾸기, 별 먹은사람 스코어 올리기
     io.emit('starLocation', star);
     io.emit('scoreUpdate', scores);
   });

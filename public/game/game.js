@@ -1,8 +1,12 @@
 var config = {
   type: Phaser.AUTO,
   parent: 'mmorpm',
-  width: 1080,
-  height: 1920,
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+    width: 1080,
+    height: 1920,
+  },
   physics: {
     default: 'arcade',
     arcade: {
@@ -20,14 +24,18 @@ var config = {
 };
 
 var game = new Phaser.Game(config);
-
+var target = new Phaser.Math.Vector2();
 function preload() {
+
   this.load.image('ship', 'assets/img/character.png')
   this.load.image('otherPlayer', 'assets/img/character.png')
+  this.load.image('star', 'assets/img/star_gold.png')
+
 }
 
 function create() {
   var self = this;
+
   this.socket = io()
   this.otherPlayers = this.physics.add.group();
   //'currentPlayers'이벤트 받으면  할일
@@ -55,35 +63,54 @@ function create() {
   //키보드 인풋 받겠다
   this.cursors = this.input.keyboard.createCursorKeys();
   //터치 인풋
-  this.input.addPointer(1);
+  //this.input.addPointer(1);
+
   //'playerMoved'이벤트를 서버에서 수신하고 playerInfo에 수신받은 players[socket.id]정보 입력
-  this.socket.on('playerMoved', function (playerInfo) {
+  this.socket.on('playerMoved', function(playerInfo) {
     //otherPlayers 오브젝트
-  self.otherPlayers.getChildren().forEach(function (otherPlayer) {
-    if (playerInfo.playerId === otherPlayer.playerId) {
-      otherPlayer.setRotation(playerInfo.rotation);
-      otherPlayer.setPosition(playerInfo.x, playerInfo.y);
+    self.otherPlayers.getChildren().forEach(function(otherPlayer) {
+      if (playerInfo.playerId === otherPlayer.playerId) {
+        otherPlayer.setRotation(playerInfo.rotation);
+        otherPlayer.setPosition(playerInfo.x, playerInfo.y);
+      }
+    });
+  });
+  //스코어 부분 텍스트 렌더링
+  this.blueScoreText = this.add.text(16, 16, '', {
+    fontSize: '32px',
+    fill: '#0000FF'
+  });
+  this.redScoreText = this.add.text(584, 16, '', {
+    fontSize: '32px',
+    fill: '#FF0000'
+  });
+  //스코어 업데이트 이벤트 받으면 할 일
+  this.socket.on('scoreUpdate', function(scores) {
+    self.blueScoreText.setText('Blue: ' + scores.blue);
+    self.redScoreText.setText('Red: ' + scores.red);
+  })
+  self.socket.on('starLocation', function(starLocation) {
+    if (!self.star) {
+      self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star')
+      self.physics.add.overlap(self.ship, self.star, function dummyCollectStar() {
+        this.socket.emit('starCollected');
+      }, null, self);
+    } else {
+      self.star.x = starLocation.x;
+      self.star.y = starLocation.y;
     }
   });
-});
-//스코어 부분
-this.blueScoreText = this.add.text(16, 16, '', { fontSize: '32px', fill: '#0000FF' });
-this.redScoreText = this.add.text(584, 16, '', { fontSize: '32px', fill: '#FF0000' });
-
-this.socket.on('scoreUpdate', function (scores) {
-  self.blueScoreText.setText('Blue: ' + scores.blue);
-  self.redScoreText.setText('Red: ' + scores.red);
-});
 
 }
 
 function update() {
 
   if (this.ship) {
-    if(this.input.pointer1.isDown){
-      this.ship.x = this.input.pointer1.x;
-      this.ship.y = this.input.pointer1.y;
-    }
+    this.input.on('pointermove',function (pointer) {
+      target.x = pointer.x;
+      target.y = pointer.y;
+      this. physics.moveToObject(this.ship, target, 2000);
+    }, this)
     if (this.cursors.left.isDown) {
       this.ship.setAngularVelocity(-150);
     } else if (this.cursors.right.isDown) {
