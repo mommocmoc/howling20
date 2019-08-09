@@ -1,25 +1,20 @@
 const express = require('express');
+var _ = require('lodash');
 var app = express();
 var server = require('http').Server(app)
 var io = require('socket.io')(server)
-var osc = require('osc.io')
 var players = {}
+var numOfPlayers;
+var notes = []
 var star = {
   x: Math.floor(Math.random() * 700) + 50,
-  y: Math.floor(Math.random() * 500) + 50
+  y: Math.random() *(1920- 600) + 600
 };
-var scores = {
-  blue: 0,
-  red: 0
-};
-osc(io)
-var oscServer = io.of('http://localhost/osc/servers/8000');
-var oscClient = io.of('http://localhost/osc/clients/8000');
-setInterval(function() {
-  oscClient.emit('message', ['/osc/test', 200])
-}, 1000)
+var bullets = {}
+var scores = {};
 app.use('/assets', express.static('./public'))
 app.use('/scripts', express.static('./node_modules/phaser/dist/'))
+app.use('/scripts', express.static('./node_modules/lodash'))
 // app.use('/scripts', express.static('./node_modules/osc-js/lib'))
 app.get('/', function(req, res) {
   res.sendFile(__dirname + '/index.html')
@@ -33,19 +28,62 @@ server.listen(3000, function() {
 io.on('connection', function(socket) {
   console.log('user connected : ', socket.id);
   //player Setting
-  players[socket.id] = {
-    rotation: 0,
-    x: Math.floor(Math.random() * 880) + 50,
-    y: Math.floor(Math.random() * 1820) + 50,
-    playerId: socket.id,
-    team: (Math.floor(Math.random() * 2) == 0) ? 'red' : 'blue'
+  numOfPlayers = Object.keys(players).length;
+  console.log('connected players : ' + numOfPlayers );
+  if(numOfPlayers === 0){
+    players[socket.id] = {
+      rotation: 0,
+      x: 540,
+      y: 200,
+      playerId: socket.id,
+      team: (Math.floor(Math.random() * 2) == 0) ? 'red' : 'blue',
+      note : 0,
+      isMaster: true,
+      life : 10
+    };
+
+    bullets[socket.id] = {
+      x : '' ,
+      y : '' ,
+      playerId: socket.id
+    };
+    scores[socket.id] = {
+      MyScore : 0,
+      playerId: socket.id,
+      isMaster: true
+    }
+  }else{
+    players[socket.id] = {
+      rotation: 0,
+      x: Math.floor(Math.random() * 880) + 50,
+      y: Math.random() * (1820-900) + 900,
+      playerId: socket.id,
+      team: (Math.floor(Math.random() * 2) == 0) ? 'red' : 'blue',
+      note : 0,
+      isMaster: false,
+      life: 10
+    }
+
+    bullets[socket.id] = {
+      x : '' ,
+      y : '' ,
+      playerId: socket.id,
+    };
+    scores[socket.id] = {
+      MyScore : 0,
+      playerId: socket.id,
+      isMaster: false
+    }
   }
+
   //send the players objec to the new player
   socket.emit('currentPlayers', players);
   // send the star object to the new player
   socket.emit('starLocation', star);
   // send the current scores
   socket.emit('scoreUpdate', scores);
+  // send the current life
+  socket.emit('hpUpdate', players)
   //update all other players of the new player
   socket.broadcast.emit('newPlayer', players[socket.id]);
 
@@ -67,17 +105,24 @@ io.on('connection', function(socket) {
     socket.broadcast.emit('playerMoved', players[socket.id]);
   });
 
+  socket.on('BulletFire', function(bulletData) {
+
+    bullets[socket.id].x = bulletData.x;
+    bullets[socket.id].y = bulletData.y;
+    bullets[socket.id].playerId = bulletData.playerId
+    bullets[socket.id].isMaster = bulletData.isMaster
+    // console.log(bullets[socket.id].x + ' ' + bullets[socket.id].y+ ' ' + bullets[socket.id].playerId) ;
+    socket.broadcast.emit('bulletFired',bullets[socket.id]);
+  });
+
   socket.on('starCollected', function() {
-    if (players[socket.id].team === 'red') {
-      scores.red += 10;
-    } else {
-      scores.blue += 10;
-    }
-    star.x = Math.floor(Math.random() * 700) + 50;
-    star.y = Math.floor(Math.random() * 500) + 50;
+    scores[socket.id].MyScore += 10;
+    star.x = Math.floor(Math.random() * 880) + 50;
+    star.y =Math.random() * (1920 - 600) + 600,
     //별 위치 바꾸기, 별 먹은사람 스코어 올리기
     io.emit('starLocation', star);
     io.emit('scoreUpdate', scores);
+    console.log(star.x+ '  ' + star.y);
   });
 })
 
