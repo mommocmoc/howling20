@@ -39,7 +39,7 @@ io.on('connection', function(socket) {
       team: (Math.floor(Math.random() * 2) == 0) ? 'red' : 'blue',
       note : 0,
       isMaster: true,
-      life : 10
+      life : 100
     };
 
     bullets[socket.id] = {
@@ -61,7 +61,7 @@ io.on('connection', function(socket) {
       team: (Math.floor(Math.random() * 2) == 0) ? 'red' : 'blue',
       note : 0,
       isMaster: false,
-      life: 10
+      life: 30
     }
 
     bullets[socket.id] = {
@@ -122,8 +122,13 @@ io.on('connection', function(socket) {
     //별 위치 바꾸기, 별 먹은사람 스코어 올리기
     io.emit('starLocation', star);
     io.emit('scoreUpdate', scores);
-    console.log(star.x+ '  ' + star.y);
   });
+
+  socket.on('attack',function(info) {
+    players[info].life --;
+    console.log(players[info].life);
+    io.emit('lifeUpdate',players[info])
+  })
 })
 
 //random int 값 받기 , 나중에 캐릭터 설정 할 때 사용 가능할 듯
