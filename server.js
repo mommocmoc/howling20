@@ -1,5 +1,6 @@
 const express = require('express');
 var _ = require('lodash');
+const maxApi = require('max-api');
 var app = express();
 var server = require('http').Server(app)
 var io = require('socket.io')(server)
@@ -22,8 +23,10 @@ app.get('/', function(req, res) {
 
 server.listen(3000, function() {
   console.log('Listening on ' + server.address().port);
-
 })
+maxApi.post('Listening on 3000')
+
+
 
 io.on('connection', function(socket) {
   console.log('user connected : ', socket.id);
@@ -39,7 +42,7 @@ io.on('connection', function(socket) {
       team: (Math.floor(Math.random() * 2) == 0) ? 'red' : 'blue',
       note : 0,
       isMaster: true,
-      life : 100
+      life : 100000
     };
 
     bullets[socket.id] = {
@@ -75,7 +78,20 @@ io.on('connection', function(socket) {
       isMaster: false
     }
   }
-
+  //
+  maxApi.addHandler('input',function(triger) {
+    console.log(triger);
+    // maxApi.post(triger);
+    if(triger === 'LEFT'){
+      console.log('x - 3');
+      maxApi.post('x - 3');
+    }else if(triger === 'RIGHT'){
+      console.log('x + 3');
+      maxApi.post('x + 3');
+    }else if(triger === 49||triger === 50 || triger === 51||triger === 52 || triger === 53){
+      socket.emit('test')
+    }
+  })
   //send the players objec to the new player
   socket.emit('currentPlayers', players);
   // send the star object to the new player
@@ -106,11 +122,17 @@ io.on('connection', function(socket) {
   });
 
   socket.on('BulletFire', function(bulletData) {
-
     bullets[socket.id].x = bulletData.x;
     bullets[socket.id].y = bulletData.y;
     bullets[socket.id].playerId = bulletData.playerId
     bullets[socket.id].isMaster = bulletData.isMaster
+
+      maxApi.post(bulletData.x,bulletData.y)
+      maxApi.outlet(bulletData.x,bulletData.y)
+      if(bulletData.isMaster){
+        maxApi.outlet(['s',bulletData.x,bulletData.y]);
+      }
+
     // console.log(bullets[socket.id].x + ' ' + bullets[socket.id].y+ ' ' + bullets[socket.id].playerId) ;
     socket.broadcast.emit('bulletFired',bullets[socket.id]);
   });
@@ -122,6 +144,7 @@ io.on('connection', function(socket) {
     //별 위치 바꾸기, 별 먹은사람 스코어 올리기
     io.emit('starLocation', star);
     io.emit('scoreUpdate', scores);
+    maxApi.outlet('star')
   });
 
   socket.on('attack',function(info) {

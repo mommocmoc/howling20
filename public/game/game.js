@@ -49,8 +49,7 @@ function preload() {
 
 }
 
-function create() {
-  //아래로 못넘어오게 땅 만들기
+function create(time, delta) {
 
   //총알
   var Bullet = new Phaser.Class({
@@ -233,6 +232,9 @@ function create() {
     }
     if(self.ship.isMaster === playersLife.isMaster){
       self.blueScoreText.setText('My Life Point : ' + self.ship.life)
+      if(self.ship.life < 0){
+        self.ship.destroy()
+      }
     }
   })
   self.socket.on('starLocation', function(starLocation) {
@@ -344,7 +346,7 @@ function addOtherPlayers(self, playerInfo) {
     self.otherPlayers.add(otherPlayer);
   }
 };
-
+var socket = this.socket
 
 function update(time, delta) {
 
@@ -391,11 +393,14 @@ function update(time, delta) {
         lastFired = time + 50;
       }
     }
+
+
     //화살표 위 누르면 내꺼 총알 나감
     if (cursors.up.isDown && time > lastFired) {
       var masterBullet = masterBullets.get();
 
       if (masterBullet) {
+
         masterBullet.fire(this.ship.x, this.ship.y+200);
         this.socket.emit('BulletFire', {
           x: masterBullet.x,
@@ -428,5 +433,7 @@ function update(time, delta) {
       rotation: this.ship.rotation
     };
   }
+
+
 
 }
